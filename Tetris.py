@@ -3,13 +3,17 @@ import pygame
 import random
 
 pygame.init()
-window = pygame.display.set_mode((400, 800))
+window = pygame.display.set_mode((710, 820))
 playing = True
 
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+YELLOW = (255, 255, 0)
+LIGHT_BLUE = (100, 100, 255)
+ORANGE = (255, 120, 0)
+PURPLE = (255, 0, 255)
 
 # map class
 class Map:
@@ -22,7 +26,7 @@ class Map:
     def draw(self):
         for i in range(0, 20):
             for j in range(0, 10):
-                pygame.draw.rect(window, self.map[i][j][0], (j * 40, i * 40, 40, 40))
+                pygame.draw.rect(window, self.map[i][j][0], (2 * j + 150 + j * 39, 2 * i + i * 39, 40, 40))
             
     # change the state and color of the block on the map
     def changeBlock(self, x, y, block, color, state):
@@ -66,7 +70,7 @@ class Map:
 class Shape:
     # each block
     blockL = (((0, 0, 0, 0),
-			   (0, 1, 0, 0),
+               (0, 1, 0, 0),
 			   (0, 1, 0, 0),
 			   (0, 1, 1, 0)),
 			  ((0, 0, 0, 0),
@@ -153,24 +157,30 @@ class Shape:
                (0, 0, 0, 0)))
 			   
     # initialize with name that specefies block, coordinates, and color
-    def __init__(self, name, x, y, color):
+    def __init__(self, name, x, y):
         if (name == "L"):
             self.block = Shape.blockL
+            self.color = ORANGE
         elif (name == "T"):
             self.block = Shape.blockT
+            self.color = PURPLE
         elif (name == "J"):
             self.block = Shape.blockJ
+            self.color = BLUE
         elif (name == "I"):
             self.block = Shape.blockI
+            self.color = LIGHT_BLUE
         elif (name == "S"):
             self.block = Shape.blockS
+            self.color = GREEN
         elif (name == "Z"):
             self.block = Shape.blockZ
+            self.color = RED
         elif (name == "O"):
             self.block = Shape.blockO
+            self.color = YELLOW
         self.x = x
         self.y = y
-        self.color = color
         self.r = 0
         self.setBlock(self.color, 1)
 	
@@ -249,6 +259,13 @@ for i in range(0, 20):
 		map[i].append([BLACK, 0])
 mapObj = Map(map)
 
+pygame.draw.rect(window, (50, 50, 50), (0, 0, 150, 820))
+pygame.draw.rect(window, (50, 50, 50), (560, 0, 150, 820))
+for i in range(0, 10):
+    pygame.draw.rect(window, (50, 50, 50), (i + 190 + 40 * i, 0, 1, 820))
+for i in range(0, 20):
+    pygame.draw.rect(window, (50, 50, 50), (150, (i - 1) + 40 * i, 520, 1))
+
 # block types
 shapes = ("L", "T", "J", "I", "S", "Z", "O")
 colors = (RED, BLUE, GREEN)
@@ -256,10 +273,11 @@ colors = (RED, BLUE, GREEN)
 # main loop
 activeBlock = False
 time = pygame.time.get_ticks()
+wait = 1000
 while playing:
     # check to see if need to create new block
     if activeBlock == False:
-        block = Shape(random.choice(shapes), 3, -4, random.choice(colors))
+        block = Shape(random.choice(shapes), 3, -4)
         activeBlock = True
         activeBlock = True
     mapObj.draw()
@@ -277,6 +295,6 @@ while playing:
             elif event.key == pygame.K_r:
                 block.rotate()
     mapObj.checkRows()
-    if pygame.time.get_ticks() > time + 500:
+    if pygame.time.get_ticks() > time + wait:
         block.move("d")
         time = pygame.time.get_ticks()
