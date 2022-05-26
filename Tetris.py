@@ -1,9 +1,9 @@
-import time
 import pygame
 import random
 
 pygame.init()
 window = pygame.display.set_mode((710, 820))
+font = pygame.font.Font('freesansbold.ttf', 32)
 playing = True
 
 BLACK = (0, 0, 0)
@@ -35,9 +35,13 @@ class Map:
                 if block[i][j] == 1:
                     if x + j >= 0 and x + j < 10 and y + i >= 0 and y + i < 20:
                         self.map[y+i][x+j] = [color, state]
+                    if state == 2 and y + i < 0:
+                        global playing
+                        playing = False
 
     # check if a row is full
     def checkRows(self):
+        count = 0
         for i in range(0, 20):
             total = 0
             for j in range(0, 10):
@@ -45,6 +49,8 @@ class Map:
                     total += 1
             if total == 10:
                 self.clearRow(i)
+                count += 1
+        return count
     
     # clear specefied row and shift everything above down
     def clearRow(self, rowNum):
@@ -65,6 +71,16 @@ class Map:
                 coord[1] += 1
                 
         self.locked = newLocked
+    
+    def drawQueue(self, block, color, name):
+        pygame.draw.rect(window, (255, 255, 255), (575, 70, 120, 250))
+        for i in range(0, 4):
+            for j in range(0, 4):
+                if block[i][j] == 1:
+                    if name == "Z" or name == "S" or name == "T":
+                        pygame.draw.rect(window, color, (576 + 39 * j, 80 + 39 * i, 39, 39))
+                    else:
+                        pygame.draw.rect(window, color, (560 + 39 * j, 80 + 39 * i, 39, 39))
         
 # shape class
 class Shape:
@@ -120,10 +136,10 @@ class Shape:
 			   (1, 1, 1, 0),
 			   (0, 0, 0, 0)))
     
-    blockI = (((0, 0, 1, 0),
-               (0, 0, 1, 0),
-               (0, 0, 1, 0),
-               (0, 0, 1, 0)),
+    blockI = (((0, 1, 0, 0),
+               (0, 1, 0, 0),
+               (0, 1, 0, 0),
+               (0, 1, 0, 0)),
               ((0, 0, 0, 0),
                (0, 0, 0, 0),
                (1, 1, 1, 1),
@@ -139,8 +155,8 @@ class Shape:
                (0, 0, 1, 0)))
     
     blockZ = (((0, 0, 0, 0),
+               (1, 1, 0, 0),
                (0, 1, 1, 0),
-               (0, 0, 1, 1),
                (0, 0, 0, 0)),
               ((0, 0, 1, 0),
                (0, 1, 1, 0),
@@ -157,7 +173,7 @@ class Shape:
                (0, 0, 0, 0)))
 			   
     # initialize with name that specefies block, coordinates, and color
-    def __init__(self, name, x, y):
+    def __init__(self, name, queue, x = 3, y = -4):
         if (name == "L"):
             self.block = Shape.blockL
             self.color = ORANGE
@@ -182,7 +198,10 @@ class Shape:
         self.x = x
         self.y = y
         self.r = 0
-        self.setBlock(self.color, 1)
+        if queue == False:
+            self.setBlock(self.color, 1)
+        else:
+            mapObj.drawQueue(self.block[0], self.color, name)
 	
     # move the block in a certain direction
     def move(self, dir):
@@ -204,6 +223,15 @@ class Shape:
             self.x += 1
             if self.checkPos() == False:
                 self.x -= 1
+        elif (dir == "a"):
+            while True:
+                self.y += 1
+                if self.checkIfLocked() == False:
+                    activeBlock = False
+                    self.y -= 1
+                    state = 2
+                    self.setNewLocked()
+                    break
         self.setBlock(self.color, state)
 	
     # rotate the block
@@ -251,6 +279,18 @@ class Shape:
                 if self.block[self.r][i][j] == 1:
                     mapObj.locked.append([self.x + j, self.y + i])
         
+def incScore(score, rows, level):
+    if rows == 1:
+        return score + 40 * (level + 1)
+    elif rows == 2:
+        return score + 100 * (level + 1)
+    elif rows == 3:
+        return score + 300 * (level + 1)
+    elif rows == 4:
+        return score + 1200 * (level + 1)
+    else:
+        return score
+        
 # create map
 map = []
 for i in range(0, 20):
@@ -261,10 +301,19 @@ mapObj = Map(map)
 
 pygame.draw.rect(window, (50, 50, 50), (0, 0, 150, 820))
 pygame.draw.rect(window, (50, 50, 50), (560, 0, 150, 820))
+pygame.draw.rect(window, (255, 255, 255), (15, 17, 120, 80))
+pygame.draw.rect(window, (255, 255, 255), (15, 130, 120, 80))
+pygame.draw.rect(window, (255, 255, 255), (575, 17, 120, 250))
+scoreLabel = font.render("Score", False, (0, 0, 0))
+window.blit(scoreLabel, (28, 133))
+levelLable = font.render("Level", False, (0, 0, 0))
+window.blit(levelLable, (30, 20))
 for i in range(0, 10):
     pygame.draw.rect(window, (50, 50, 50), (i + 190 + 40 * i, 0, 1, 820))
 for i in range(0, 20):
-    pygame.draw.rect(window, (50, 50, 50), (150, (i - 1) + 40 * i, 520, 1))
+    pygame.draw.rect(window, (50, 50, 50), (150, (i - 1) + 40 * i, 420, 1))
+nextLabel = font.render("Next", False, (0, 0, 0))
+window.blit(nextLabel, (595, 20))
 
 # block types
 shapes = ("L", "T", "J", "I", "S", "Z", "O")
@@ -272,14 +321,27 @@ colors = (RED, BLUE, GREEN)
 
 # main loop
 activeBlock = False
+lineUp = []
 time = pygame.time.get_ticks()
 wait = 1000
+score = 0
+level = 0
+totalLines = 0
+lineUp.append(random.choice(shapes))
 while playing:
     # check to see if need to create new block
+    scoreCounter = font.render(str(score), False, (0, 0, 0))
+    levelCounter = font.render(str(level), False, (0, 0, 0))
+    pygame.draw.rect(window, (255, 255, 255), (15, 50, 120, 50))
+    pygame.draw.rect(window, (255, 255, 255), (15, 160, 120, 50))
+    window.blit(levelCounter, (28, 57))
+    window.blit(scoreCounter, (28, 168))
     if activeBlock == False:
-        block = Shape(random.choice(shapes), 3, -4)
+        lineUp.append(random.choice(shapes))
+        block = Shape(lineUp[0], False)
+        nextBlock = Shape(lineUp[1], True)
         activeBlock = True
-        activeBlock = True
+        del lineUp[0]
     mapObj.draw()
     pygame.display.flip()
     for event in pygame.event.get():
@@ -294,7 +356,14 @@ while playing:
                 block.move("r")
             elif event.key == pygame.K_r:
                 block.rotate()
-    mapObj.checkRows()
+            elif event.key == pygame.K_q:
+                block.move("a")
+    cleared = mapObj.checkRows()
+    totalLines += cleared
+    level = totalLines // 10
+    score = incScore(score, cleared, level)
+    if wait > 200:
+        wait = 1000 - 100 * level
     if pygame.time.get_ticks() > time + wait:
         block.move("d")
         time = pygame.time.get_ticks()
