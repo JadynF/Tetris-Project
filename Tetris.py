@@ -1,10 +1,12 @@
 import pygame
 import random
+import pygame_widgets
+from pygame_widgets.button import Button
 
 pygame.init()
 window = pygame.display.set_mode((710, 820))
 font = pygame.font.Font('freesansbold.ttf', 32)
-playing = True
+font2 = pygame.font.Font('freesansbold.ttf', 26)
 
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -27,6 +29,10 @@ class Map:
         for i in range(0, 20):
             for j in range(0, 10):
                 pygame.draw.rect(window, self.map[i][j][0], (2 * j + 150 + j * 39, 2 * i + i * 39, 40, 40))
+        for i in range(0, 10):
+            pygame.draw.rect(window, (50, 50, 50), (i + 190 + 40 * i, 0, 1, 820))
+        for i in range(0, 20):
+            pygame.draw.rect(window, (50, 50, 50), (150, (i - 1) + 40 * i, 420, 1))
             
     # change the state and color of the block on the map
     def changeBlock(self, x, y, block, color, state):
@@ -45,7 +51,7 @@ class Map:
         for i in range(0, 20):
             total = 0
             for j in range(0, 10):
-                if map[i][j][1] == 2:
+                if self.map[i][j][1] == 2:
                     total += 1
             if total == 10:
                 self.clearRow(i)
@@ -62,10 +68,10 @@ class Map:
                 newLocked.append(coord)
         for i in reversed(range(0, rowNum)):
             for j in range(0, 10):
-                if map[i][j][1] == 2:
-                    curColor = map[i][j][0]
-                    map[i][j] = [BLACK, 0]
-                    map[i + 1][j] = [curColor, 2]
+                if self.map[i][j][1] == 2:
+                    curColor = self.map[i][j][0]
+                    self.map[i][j] = [BLACK, 0]
+                    self.map[i + 1][j] = [curColor, 2]
         for coord in newLocked:
             if coord[1] < rowNum:
                 coord[1] += 1
@@ -278,7 +284,54 @@ class Shape:
             for j in range(0, 4):
                 if self.block[self.r][i][j] == 1:
                     mapObj.locked.append([self.x + j, self.y + i])
+                
+class Frames:
+    def __init__(self):
+        self.drawGame(False)
+        self.drawMain()
         
+    def drawMain(self):
+        titleLabel = font.render("Tetris", False, (255, 255, 255))
+        startButton = Button(window, 270, 240, 200, 50, text = "Start New Game", onClick = lambda: self.drawGame(True))
+        exitButton = Button(window, 270, 300, 200, 50, text = "Exit", onClick = lambda: pygame.QUIT())
+        window.blit(titleLabel, (320, 150))
+        
+    def drawPause(self):
+        pausedLabel = font.render("Paused", False, (255, 255, 255))
+        window.blit(pausedLabel, (300, 240))
+        pygame.display.update()
+        
+    def drawGame(self, play):
+        newMap = []
+        for i in range(0, 20):
+            newMap.append([])
+            for j in range(0, 10):
+                newMap[i].append([BLACK, 0])
+        mapObj.map = newMap
+        mapObj.locked = []
+        mapObj.draw()
+        global playing, score, level, totalLines
+        score = 0
+        level = 0
+        totalLines = 0
+        playing = play
+        pygame.draw.rect(window, (0, 0, 0), (0, 0, 710, 820))
+        pygame.draw.rect(window, (50, 50, 50), (0, 0, 150, 820))
+        pygame.draw.rect(window, (50, 50, 50), (560, 0, 150, 820))
+        pygame.draw.rect(window, (255, 255, 255), (15, 17, 120, 80))
+        pygame.draw.rect(window, (255, 255, 255), (15, 110, 120, 80))
+        pygame.draw.rect(window, (255, 255, 255), (15, 203, 120, 80))
+        pygame.draw.rect(window, (255, 255, 255), (575, 17, 120, 250))
+        scoreLabel = font.render("Score", False, (0, 0, 0))
+        window.blit(scoreLabel, (28, 113))
+        levelLabel = font.render("Level", False, (0, 0, 0))
+        window.blit(levelLabel, (30, 20))
+        nextLabel = font.render("Next", False, (0, 0, 0))
+        window.blit(nextLabel, (595, 20))
+        linesLabel = font.render("Lines", False, (0, 0, 0))
+        window.blit(linesLabel, (30, 206))
+    
+    
 def incScore(score, rows, level):
     if rows == 1:
         return score + 40 * (level + 1)
@@ -291,35 +344,24 @@ def incScore(score, rows, level):
     else:
         return score
         
+def setPaused(paused):
+    if paused == True:
+        return False
+    else:
+        return True
+        
 # create map
-map = []
+originalMap = []
 for i in range(0, 20):
-	map.append([])
+	originalMap.append([])
 	for j in range(0, 10):
-		map[i].append([BLACK, 0])
-mapObj = Map(map)
+		originalMap[i].append([BLACK, 0])
+mapObj = Map(originalMap)
 
-pygame.draw.rect(window, (50, 50, 50), (0, 0, 150, 820))
-pygame.draw.rect(window, (50, 50, 50), (560, 0, 150, 820))
-pygame.draw.rect(window, (255, 255, 255), (15, 17, 120, 80))
-pygame.draw.rect(window, (255, 255, 255), (15, 130, 120, 80))
-pygame.draw.rect(window, (255, 255, 255), (575, 17, 120, 250))
-scoreLabel = font.render("Score", False, (0, 0, 0))
-window.blit(scoreLabel, (28, 133))
-levelLable = font.render("Level", False, (0, 0, 0))
-window.blit(levelLable, (30, 20))
-for i in range(0, 10):
-    pygame.draw.rect(window, (50, 50, 50), (i + 190 + 40 * i, 0, 1, 820))
-for i in range(0, 20):
-    pygame.draw.rect(window, (50, 50, 50), (150, (i - 1) + 40 * i, 420, 1))
-nextLabel = font.render("Next", False, (0, 0, 0))
-window.blit(nextLabel, (595, 20))
-
-# block types
 shapes = ("L", "T", "J", "I", "S", "Z", "O")
 colors = (RED, BLUE, GREEN)
-
-# main loop
+playing = False
+paused = False
 activeBlock = False
 lineUp = []
 time = pygame.time.get_ticks()
@@ -328,42 +370,56 @@ score = 0
 level = 0
 totalLines = 0
 lineUp.append(random.choice(shapes))
-while playing:
-    # check to see if need to create new block
-    scoreCounter = font.render(str(score), False, (0, 0, 0))
-    levelCounter = font.render(str(level), False, (0, 0, 0))
-    pygame.draw.rect(window, (255, 255, 255), (15, 50, 120, 50))
-    pygame.draw.rect(window, (255, 255, 255), (15, 160, 120, 50))
-    window.blit(levelCounter, (28, 57))
-    window.blit(scoreCounter, (28, 168))
-    if activeBlock == False:
-        lineUp.append(random.choice(shapes))
-        block = Shape(lineUp[0], False)
-        nextBlock = Shape(lineUp[1], True)
-        activeBlock = True
-        del lineUp[0]
-    mapObj.draw()
-    pygame.display.flip()
+frame = Frames()
+
+while True:
+    if paused:
+        frame.drawPause()
+    elif playing:
+        # check to see if need to create new block
+        scoreCounter = font2.render(str(score), False, (0, 0, 0))
+        levelCounter = font.render(str(level), False, (0, 0, 0))
+        lineCounter = font.render(str(totalLines), False, (0, 0, 0))
+        pygame.draw.rect(window, (255, 255, 255), (15, 50, 120, 50))
+        pygame.draw.rect(window, (255, 255, 255), (15, 140, 120, 50))
+        pygame.draw.rect(window, (255, 255, 255), (15, 235, 120, 50))
+        window.blit(lineCounter, (28, 237))
+        window.blit(levelCounter, (28, 57))
+        window.blit(scoreCounter, (28, 148))
+        if activeBlock == False:
+            lineUp.append(random.choice(shapes))
+            block = Shape(lineUp[0], False)
+            nextBlock = Shape(lineUp[1], True)
+            activeBlock = True
+            del lineUp[0]
+        mapObj.draw()
+        pygame.display.flip()
+        cleared = mapObj.checkRows()
+        totalLines += cleared
+        level = totalLines // 10
+        score = incScore(score, cleared, level)
+        if wait > 200:
+            wait = 1000 - 100 * level
+        if pygame.time.get_ticks() > time + wait:
+            block.move("d")
+            time = pygame.time.get_ticks()
+    else:
+        events = pygame.event.get()
+        pygame_widgets.update(events)
+        pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            playing = False
+            pygame.QUIT()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_DOWN:
                 block.move("d")
-            elif event.key == pygame.K_a:
+            elif event.key == pygame.K_LEFT:
                 block.move("l")
-            elif event.key == pygame.K_d:
+            elif event.key == pygame.K_RIGHT:
                 block.move("r")
-            elif event.key == pygame.K_r:
+            elif event.key == pygame.K_UP:
                 block.rotate()
-            elif event.key == pygame.K_q:
+            elif event.key == pygame.K_SPACE:
                 block.move("a")
-    cleared = mapObj.checkRows()
-    totalLines += cleared
-    level = totalLines // 10
-    score = incScore(score, cleared, level)
-    if wait > 200:
-        wait = 1000 - 100 * level
-    if pygame.time.get_ticks() > time + wait:
-        block.move("d")
-        time = pygame.time.get_ticks()
+            elif event.key == pygame.K_p and playing == True:
+                paused = setPaused(paused)
